@@ -72,7 +72,6 @@ class Request {
                 }
                 
                 weakSelf?.results = data
-                
                 weakSelf?.semaphore.signal()
             }).resume()
             
@@ -84,7 +83,9 @@ class Request {
                 return
             }
             
-            weakSelf?.latestTweetId = tweets.first?.id
+            if let latestTweet = tweets.first {
+                weakSelf?.latestTweetId = latestTweet.id
+            }
                 
             successClosure?(tweets)
         }
@@ -96,11 +97,7 @@ class Request {
     private let acStore = ACAccountStore()
     private let acType: ACAccountType
     
-    private var _twitterAccount: ACAccount? {
-        didSet {
-            print("_twitterAccount was just set to \(_twitterAccount)")
-        }
-    }
+    private var _twitterAccount: ACAccount?
     
     var twitterAccount: ACAccount? {
         get {
