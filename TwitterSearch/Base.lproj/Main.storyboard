@@ -28,7 +28,7 @@
                             </scopeButtonTitles>
                         </searchBar>
                         <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="TweetCell" id="tHt-Nz-c8K" customClass="TweetCell" customModule="TwitterSearch" customModuleProvider="target">
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="TweetCell" id="tHt-Nz-c8K" customClass="TweetCell" customModule="TwitterSearch" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="72" width="375" height="94"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="tHt-Nz-c8K" id="qzg-TY-bJf">
@@ -109,7 +109,7 @@
         <scene sceneID="JJC-uj-rAe">
             <objects>
                 <navigationController id="QvX-Og-MQX" sceneMemberID="viewController">
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" misplaced="YES" id="qid-Uo-qdK">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="qid-Uo-qdK">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>

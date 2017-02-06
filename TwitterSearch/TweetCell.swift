@@ -11,7 +11,7 @@ import Foundation
 
 class TweetCell: UITableViewCell {
     
-    static let dpCache = NSCache<AnyObject, AnyObject>()
+    static let dpCache = NSCache<AnyObject, UIImage>()
 
     @IBOutlet weak var username: UILabel!
     @IBOutlet weak var body: UILabel!
@@ -24,15 +24,22 @@ class TweetCell: UITableViewCell {
             dp.image = nil
             if let url = dpURL {
                  DispatchQueue.global(qos: DispatchQoS.QoSClass.userInitiated).async { [weak weakSelf = self] in
-                    if let image = TweetCell.dpCache.object(forKey: url as AnyObject) as? UIImage {
-                        weakSelf?.dp.image = image
-                    } else if let imageData = try? Data(contentsOf: url) {
-                        if let image = UIImage(data: imageData) {
-                            
-                            DispatchQueue.main.async {
+                    // check if the image is in the cache
+                    if let image = TweetCell.dpCache.object(forKey: url as AnyObject) {
+                        DispatchQueue.main.async {
+                            if (url == weakSelf?.dpURL) {
                                 weakSelf?.dp.image = image
                             }
-                            
+                        }
+                    // download the image
+                    } else if let imageData = try? Data(contentsOf: url) {
+                        if let image = UIImage(data: imageData) {
+                            DispatchQueue.main.async {
+                                if (url == weakSelf?.dpURL) {
+                                    weakSelf?.dp.image = image
+                                }
+                            }
+                            // save the downloaded image to cache
                             TweetCell.dpCache.setObject(image, forKey: url as AnyObject, cost: imageData.count)
                         }
                     } else {
@@ -42,18 +49,4 @@ class TweetCell: UITableViewCell {
             }
         }
     }
-    
-    
-    
-//    override func awakeFromNib() {
-//        super.awakeFromNib()
-//        // Initialization code
-//    }
-//
-//    override func setSelected(_ selected: Bool, animated: Bool) {
-//        super.setSelected(selected, animated: animated)
-//
-//        // Configure the view for the selected state
-//    }
-
 }

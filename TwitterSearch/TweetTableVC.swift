@@ -10,6 +10,7 @@ import UIKit
 
 class TweetTableVC: UITableViewController, UISearchBarDelegate {
     
+    // constants that will be used throughout this class
     struct Constants {
         static let SearchCount = UInt(100)
         static let MaxResultsOnDisplay = 500
@@ -53,6 +54,8 @@ class TweetTableVC: UITableViewController, UISearchBarDelegate {
     // MARK: - Search
     var timer: Timer?
     
+    // setting this initiates the twitter search as well as
+    // triggering the "refresh timer"
     var searchString: String? {
         didSet {
             timer?.invalidate()
@@ -66,6 +69,8 @@ class TweetTableVC: UITableViewController, UISearchBarDelegate {
         }
     }
     
+    // Returns a new timer initialized to repeatedly call refresh()
+    // at Constants.RefreshInterval seconds
     func newTimer() -> Timer {
         return Timer.scheduledTimer(timeInterval: Constants.RefreshInterval,
                                     target: self,
@@ -76,41 +81,84 @@ class TweetTableVC: UITableViewController, UISearchBarDelegate {
     
     var twitterRequest: Request?
     
+    // call when new search is started
     func search() {
         statusLabel.text = Constants.MessageDuringSearch
         statusLabel.isHidden = false
         updateResults()
     }
     
+    // call when the tweets only need to be updated
     func refresh() {
         statusLabel.text = Constants.MessageDuringRefresh
         statusLabel.isHidden = false
         updateResults()
     }
     
+    // This function fetches the results of the twitter request
+    // and calls insertTweets if it receives a positive no. of tweets
     func updateResults() {
         twitterRequest?.fetchResults { [weak weakSelf = self, lastSearch = searchString] (tweets) in
             DispatchQueue.main.async {
+                
                 // make sure the search string hasn't changed
                 if lastSearch == weakSelf?.searchString {
-                    weakSelf?.tweets.insert(contentsOf: tweets, at: 0)
+                    if !tweets.isEmpty {
+                        weakSelf?.insertTweets(newTweets: tweets)
+                    }
+                    
                     weakSelf?.statusLabel.isHidden = true
                 }
             }
         }
     }
     
+    // This function inserts tweets into the model and decides
+    // when to animate this action and when not to
+    func insertTweets(newTweets: [Tweet]) {
+        tweets.insert(contentsOf: newTweets, at: 0)
+        
+        // only animate if there were previous tweets
+        if tweets.count > newTweets.count {
+            // create an [IndexPath] for newTweets
+            var insertIndexPaths = [IndexPath]()
+            for i in 0..<newTweets.count {
+                insertIndexPaths.append(IndexPath(row: i, section: 0))
+            }
+            
+            // also check if there is need for deletion
+            var deletedIndexPaths = [IndexPath]()
+            if tweets.count > Constants.MaxResultsOnDisplay {
+                // create an [IndexPath] for the deletedTweets
+                for i in Constants.MaxResultsOnDisplay..<tweets.count {
+                    deletedIndexPaths.append(IndexPath(row: i - newTweets.count, section: 0))
+                }
+                
+                tweets.removeLast(tweets.count - Constants.MaxResultsOnDisplay)
+            }
+            
+            // update the table with animation
+            tableView.beginUpdates()
+            tableView.deleteRows(at: deletedIndexPaths, with: UITableViewRowAnimation.automatic)
+            tableView.insertRows(at: insertIndexPaths, with: UITableViewRowAnimation.automatic)
+            tableView.endUpdates()
+        } else {
+            tableView.reloadData()
+        }
+    }
+    
     // MARK: - Model
+    
+    // Do not add tweets directly. Use insertTweets()
+    // although, it's ok to remove all it's tweets.
+    // This will reload the table to an empty state.
     var tweets = [Tweet]() {
         didSet {
-            // Make sure the no. of tweets on display is <= the maximum permitted
-            let extraTweets = tweets.count - Constants.MaxResultsOnDisplay
-            if extraTweets > 0 {
-                tweets.removeLast(extraTweets)
+            if tweets.isEmpty {
+                tableView.reloadData()
             }
             
             print("Tweet count: \(tweets.count)")
-            tableView.reloadData()
         }
     }
     
@@ -125,12 +173,14 @@ class TweetTableVC: UITableViewController, UISearchBarDelegate {
         tableView.rowHeight = UITableViewAutomaticDimension
         
         if let navController = navigationController {
+            // make the toolbar transparent
             navController.toolbar.isTranslucent = true
             navController.toolbar.setShadowImage(UIImage(), forToolbarPosition: .bottom)
             navController.toolbar.setBackgroundImage(UIImage(), forToolbarPosition: .bottom, barMetrics: .default)
             
             setupStatusLabel()
             
+            // calculate the status label's position w.r.t. the toolbar
             let toolbarFrame = navController.toolbar.frame
             
             statusLabel.text = Constants.MessageDuringRefresh
@@ -141,6 +191,7 @@ class TweetTableVC: UITableViewController, UISearchBarDelegate {
                                        height: statusRect.height)
             
             
+            // add the status label to the toolbar
             let statusIndicator = UIBarButtonItem(customView: statusLabel)
             let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
             toolbarItems = [flexibleSpace, statusIndicator, flexibleSpace]
@@ -148,6 +199,8 @@ class TweetTableVC: UITableViewController, UISearchBarDelegate {
         }
     }
     
+    // Sets up the status label's properties like the
+    // font, color, et. al.
     func setupStatusLabel() {
         statusLabel.isHidden = true
         statusLabel.isHighlighted = true
@@ -192,9 +245,12 @@ class TweetTableVC: UITableViewController, UISearchBarDelegate {
     }
     
     // MARK: - Miscellaneous
+    
+    // Returns a short string appropriate to represent
+    // a tweet's date. If the date is less than an day
+    // old, only the time is returned. If it's more than
+    // a day old, only the date is returned.
     func formatTweetTime(tweetDate td: Date) -> String {
-        
-        
         let df = DateFormatter()
         
         let secondsPassed = Double(td.timeIntervalSinceNow) * -1.0
